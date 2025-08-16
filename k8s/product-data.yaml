@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-data
+  namespace: ecommerce
+data:
+  products.json: |
+    {
+      "products": [
+        {
+          "id": 1,
+          "name": "iPhone 15 Pro",
+          "description": "The most advanced iPhone yet with titanium design, A17 Pro chip, and professional camera system.",
+          "price": 999.99,
+          "category": "smartphones",
+          "image": "/images/iphone.jpeg",
+          "stock": 50,
+          "featured": true,
+          "specifications": {
+            "display": "6.1-inch Super Retina XDR",
+            "chip": "A17 Pro",
+            "camera": "48MP Main, 12MP Ultra Wide, 12MP Telephoto",
+            "storage": "128GB, 256GB, 512GB, 1TB"
+          }
+        },
+        {
+          "id": 2,
+          "name": "MacBook Pro 16-inch",
+          "description": "Supercharged by M3 Pro and M3 Max chips. Built for all the ways you work and play.",
+          "price": 2499.99,
+          "category": "laptops",
+          "image": "/images/mac.jpeg",
+          "stock": 25,
+          "featured": true,
+          "specifications": {
+            "display": "16.2-inch Liquid Retina XDR",
+            "chip": "Apple M3 Pro or M3 Max",
+            "memory": "18GB or 36GB unified memory",
+            "storage": "512GB to 8TB SSD"
+          }
+        },
+        {
+          "id": 3,
+          "name": "Studio Display 27-inch",
+          "description": "5K Retina display with 600 nits of brightness, P3 wide color, and support for one billion colors.",
+          "price": 1599.99,
+          "category": "monitors",
+          "image": "/images/monitor.jpeg",
+          "stock": 15,
+          "featured": false,
+          "specifications": {
+            "display": "27-inch 5K Retina display",
+            "resolution": "5120 x 2880",
+            "brightness": "600 nits",
+            "camera": "12MP Ultra Wide with Center Stage"
+          }
+        },
+        {
+          "id": 4,
+          "name": "Pro Display XDR",
+          "description": "32-inch Retina 6K display with extreme dynamic range and superb color accuracy.",
+          "price": 4999.99,
+          "category": "monitors",
+          "image": "/images/monitor.jpeg",
+          "stock": 8,
+          "featured": true,
+          "specifications": {
+            "display": "32-inch Retina 6K display",
+            "resolution": "6016 x 3384",
+            "brightness": "1000 nits sustained, 1600 nits peak",
+            "contrast": "1,000,000:1"
+          }
+        },
+        {
+          "id": 5,
+          "name": "4K Smart Projector",
+          "description": "Ultra-portable 4K projector with wireless connectivity and built-in streaming apps.",
+          "price": 899.99,
+          "category": "projectors",
+          "image": "/images/projector.jpeg",
+          "stock": 20,
+          "featured": false,
+          "specifications": {
+            "resolution": "4K UHD (3840 x 2160)",
+            "brightness": "3000 lumens",
+            "connectivity": "WiFi, Bluetooth, HDMI, USB-C",
+            "battery": "4 hours portable use"
+          }
+        },
+        {
+          "id": 6,
+          "name": "Home Theater Projector",
+          "description": "Professional-grade projector for home cinema with laser light source and HDR support.",
+          "price": 2299.99,
+          "category": "projectors",
+          "image": "/images/projector.jpeg",
+          "stock": 12,
+          "featured": true,
+          "specifications": {
+            "resolution": "4K UHD with pixel shifting",
+            "brightness": "2500 lumens",
+            "technology": "Laser light source",
+            "features": "HDR10, HLG support"
+          }
+        }
+      ],
+      "categories": [
+        {"id": "smartphones", "name": "Smartphones", "description": "Latest mobile devices"},
+        {"id": "laptops", "name": "Laptops", "description": "Professional computing devices"},
+        {"id": "monitors", "name": "Monitors", "description": "High-resolution displays"},
+        {"id": "projectors", "name": "Projectors", "description": "Projection systems"}
+      ]
+    }

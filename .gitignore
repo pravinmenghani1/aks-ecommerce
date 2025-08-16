@@ -1,0 +1,38 @@
+# Sensitive files - DO NOT COMMIT
+k8s/secrets.yaml
+*.env
+.env*
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Azure
+.azure/
+
+# Personal notes
+notes.txt
+TODO.md

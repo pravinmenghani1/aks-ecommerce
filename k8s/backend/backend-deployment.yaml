@@ -1,0 +1,206 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: ecommerce
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        # Replace with your actual backend image
+        image: node:18-alpine
+        ports:
+        - containerPort: 3000
+        env:
+        # Database configuration
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: DB_PORT
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: DB_NAME
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: DB_USERNAME
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: DB_PASSWORD
+        # Redis configuration
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: REDIS_PASSWORD
+        # Application configuration
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: BACKEND_PORT
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: JWT_SECRET
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: STRIPE_SECRET_KEY
+        # Simple Node.js server with product API
+        command: ["/bin/sh"]
+        args: 
+        - -c
+        - |
+          mkdir -p /app
+          cat > /app/server.js << 'EOF'
+          const http = require('http');
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Load product data
+          const productsData = JSON.parse(fs.readFileSync('/data/products.json', 'utf8'));
+          
+          const server = http.createServer((req, res) => {
+            // Enable CORS
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            
+            if (req.method === 'OPTIONS') {
+              res.writeHead(200);
+              res.end();
+              return;
+            }
+            
+            const url = req.url;
+            
+            if (url === '/health' || url === '/ready') {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+            } else if (url === '/api/products') {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(productsData));
+            } else if (url.startsWith('/api/products/')) {
+              const productId = parseInt(url.split('/')[3]);
+              const product = productsData.products.find(p => p.id === productId);
+              if (product) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(product));
+              } else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Product not found' }));
+              }
+            } else if (url === '/api/categories') {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ categories: productsData.categories }));
+            } else if (url.startsWith('/api/products/category/')) {
+              const category = url.split('/')[4];
+              const categoryProducts = productsData.products.filter(p => p.category === category);
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ products: categoryProducts }));
+            } else if (url === '/api/featured') {
+              const featuredProducts = productsData.products.filter(p => p.featured);
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ products: featuredProducts }));
+            } else {
+              res.writeHead(404, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Not found' }));
+            }
+          });
+          
+          const port = process.env.PORT || 3000;
+          server.listen(port, () => {
+            console.log(`E-commerce API server running on port ${port}`);
+            console.log(`Available endpoints:`);
+            console.log(`  GET /api/products - All products`);
+            console.log(`  GET /api/products/:id - Single product`);
+            console.log(`  GET /api/categories - All categories`);
+            console.log(`  GET /api/products/category/:category - Products by category`);
+            console.log(`  GET /api/featured - Featured products`);
+            console.log(`  GET /health - Health check`);
+          });
+          EOF
+          
+          mkdir -p /app
+          cd /app
+          node server.js
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: product-data
+          mountPath: /data
+      volumes:
+      - name: product-data
+        configMap:
+          name: product-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP

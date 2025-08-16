@@ -1,0 +1,307 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: ecommerce
+  labels:
+    app: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      initContainers:
+      - name: setup-frontend
+        image: alpine:latest
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          # Create the main HTML file
+          cat > /usr/share/nginx/html/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>TechStore - Premium Electronics</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                  .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+                  header { background: #1a1a1a; color: white; padding: 1rem 0; }
+                  .header-content { display: flex; justify-content: space-between; align-items: center; }
+                  .logo { font-size: 1.8rem; font-weight: bold; }
+                  nav ul { display: flex; list-style: none; gap: 2rem; }
+                  nav a { color: white; text-decoration: none; transition: color 0.3s; }
+                  nav a:hover { color: #007aff; }
+                  .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4rem 0; text-align: center; }
+                  .hero h1 { font-size: 3rem; margin-bottom: 1rem; }
+                  .hero p { font-size: 1.2rem; margin-bottom: 2rem; }
+                  .btn { display: inline-block; background: #007aff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; transition: background 0.3s; }
+                  .btn:hover { background: #0056b3; }
+                  .section { padding: 4rem 0; }
+                  .section-title { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
+                  .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+                  .product-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.3s; }
+                  .product-card:hover { transform: translateY(-5px); }
+                  .product-image { width: 100%; height: 200px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+                  .product-info { padding: 1.5rem; }
+                  .product-name { font-size: 1.3rem; font-weight: bold; margin-bottom: 0.5rem; }
+                  .product-price { font-size: 1.5rem; color: #007aff; font-weight: bold; margin-bottom: 1rem; }
+                  .product-description { color: #666; margin-bottom: 1rem; }
+                  .categories { display: flex; gap: 1rem; margin-bottom: 2rem; justify-content: center; flex-wrap: wrap; }
+                  .category-btn { padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 20px; cursor: pointer; transition: all 0.3s; }
+                  .category-btn:hover, .category-btn.active { background: #007aff; color: white; }
+                  .loading { text-align: center; padding: 2rem; }
+                  .error { text-align: center; padding: 2rem; color: #d32f2f; }
+                  footer { background: #1a1a1a; color: white; text-align: center; padding: 2rem 0; }
+                  .featured-badge { background: #ff6b35; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; position: absolute; top: 10px; right: 10px; }
+                  .product-card { position: relative; }
+              </style>
+          </head>
+          <body>
+              <header>
+                  <div class="container">
+                      <div class="header-content">
+                          <div class="logo">🛒 TechStore</div>
+                          <nav>
+                              <ul>
+                                  <li><a href="#home">Home</a></li>
+                                  <li><a href="#products">Products</a></li>
+                                  <li><a href="#about">About</a></li>
+                                  <li><a href="#contact">Contact</a></li>
+                              </ul>
+                          </nav>
+                      </div>
+                  </div>
+              </header>
+
+              <section class="hero" id="home">
+                  <div class="container">
+                      <h1>Premium Electronics Store</h1>
+                      <p>Discover the latest in technology - iPhones, MacBooks, Monitors, and Projectors</p>
+                      <a href="#products" class="btn">Shop Now</a>
+                  </div>
+              </section>
+
+              <section class="section" id="products">
+                  <div class="container">
+                      <h2 class="section-title">Our Products</h2>
+                      
+                      <div class="categories">
+                          <button class="category-btn active" onclick="filterProducts('all')">All Products</button>
+                          <button class="category-btn" onclick="filterProducts('smartphones')">Smartphones</button>
+                          <button class="category-btn" onclick="filterProducts('laptops')">Laptops</button>
+                          <button class="category-btn" onclick="filterProducts('monitors')">Monitors</button>
+                          <button class="category-btn" onclick="filterProducts('projectors')">Projectors</button>
+                      </div>
+
+                      <div id="products-container">
+                          <div class="loading">Loading products...</div>
+                      </div>
+                  </div>
+              </section>
+
+              <footer>
+                  <div class="container">
+                      <p>&copy; 2024 TechStore. All rights reserved. | Premium Electronics & Technology</p>
+                  </div>
+              </footer>
+
+              <script>
+                  let allProducts = [];
+                  let currentCategory = 'all';
+
+                  // Fetch products from API
+                  async function loadProducts() {
+                      try {
+                          const response = await fetch('/api/products');
+                          const data = await response.json();
+                          allProducts = data.products;
+                          displayProducts(allProducts);
+                      } catch (error) {
+                          document.getElementById('products-container').innerHTML = 
+                              '<div class="error">Failed to load products. Please try again later.</div>';
+                          console.error('Error loading products:', error);
+                      }
+                  }
+
+                  // Display products
+                  function displayProducts(products) {
+                      const container = document.getElementById('products-container');
+                      
+                      if (products.length === 0) {
+                          container.innerHTML = '<div class="error">No products found.</div>';
+                          return;
+                      }
+
+                      const productsHTML = products.map(product => `
+                          <div class="product-card" data-category="${product.category}">
+                              ${product.featured ? '<div class="featured-badge">Featured</div>' : ''}
+                              <div class="product-image">
+                                  📱${getProductEmoji(product.category)}
+                              </div>
+                              <div class="product-info">
+                                  <div class="product-name">${product.name}</div>
+                                  <div class="product-price">$${product.price.toFixed(2)}</div>
+                                  <div class="product-description">${product.description}</div>
+                                  <button class="btn" onclick="viewProduct(${product.id})">View Details</button>
+                              </div>
+                          </div>
+                      `).join('');
+
+                      container.innerHTML = `<div class="products-grid">${productsHTML}</div>`;
+                  }
+
+                  // Get emoji for product category
+                  function getProductEmoji(category) {
+                      const emojis = {
+                          smartphones: '📱',
+                          laptops: '💻',
+                          monitors: '🖥️',
+                          projectors: '📽️'
+                      };
+                      return emojis[category] || '📦';
+                  }
+
+                  // Filter products by category
+                  function filterProducts(category) {
+                      currentCategory = category;
+                      
+                      // Update active button
+                      document.querySelectorAll('.category-btn').forEach(btn => {
+                          btn.classList.remove('active');
+                      });
+                      event.target.classList.add('active');
+
+                      // Filter and display products
+                      const filteredProducts = category === 'all' 
+                          ? allProducts 
+                          : allProducts.filter(product => product.category === category);
+                      
+                      displayProducts(filteredProducts);
+                  }
+
+                  // View product details
+                  function viewProduct(productId) {
+                      const product = allProducts.find(p => p.id === productId);
+                      if (product) {
+                          alert(`Product: ${product.name}\nPrice: $${product.price}\nStock: ${product.stock} units\n\nSpecifications:\n${Object.entries(product.specifications).map(([key, value]) => `${key}: ${value}`).join('\n')}`);
+                      }
+                  }
+
+                  // Load products when page loads
+                  document.addEventListener('DOMContentLoaded', loadProducts);
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          # Copy product images
+          mkdir -p /usr/share/nginx/html/images
+          cp /images/* /usr/share/nginx/html/images/ 2>/dev/null || true
+        volumeMounts:
+        - name: html-content
+          mountPath: /usr/share/nginx/html
+        - name: product-images
+          mountPath: /images
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        env:
+        - name: API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: API_BASE_URL
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: NODE_ENV
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: html-content
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: html-content
+        emptyDir: {}
+      - name: product-images
+        configMap:
+          name: product-images
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: ecommerce
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        
+        location / {
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html;
+        }
+        
+        location /api/ {
+            proxy_pass http://backend-service:3000/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
