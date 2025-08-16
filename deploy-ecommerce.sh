@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # E-commerce Multi-Container Deployment Script for AKS
-# Cluster: myaks1, Resource Group: myaks1_group
+# Cluster: myaks1, Resource Group: myaks1-group
 
 set -e
 
 # Configuration
-RESOURCE_GROUP="myaks1_group"
+RESOURCE_GROUP="myaks1-group"
 CLUSTER_NAME="myaks1"
 NAMESPACE="ecommerce"
 

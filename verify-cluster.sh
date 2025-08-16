@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Verification script for AKS cluster connectivity
-# Resource Group: myaks1_group, Cluster: myaks1
+# Resource Group: myaks1-group, Cluster: myaks1
 
 set -e
 
-RESOURCE_GROUP="myaks1_group"
+RESOURCE_GROUP="myaks1-group"
 CLUSTER_NAME="myaks1"
 
 echo "🔍 Verifying AKS cluster connectivity..."

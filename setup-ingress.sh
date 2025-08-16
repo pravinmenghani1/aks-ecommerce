@@ -5,7 +5,7 @@
 
 set -e
 
-RESOURCE_GROUP="myaks1_group"
+RESOURCE_GROUP="myaks1-group"
 CLUSTER_NAME="myaks1"
 
 echo "🔧 Setting up NGINX Ingress Controller..."
